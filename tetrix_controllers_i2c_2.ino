@@ -1,11 +1,17 @@
 
 #include "servo_i2c.h"
 #include "dcmotor_i2c.h"
+#include "DHT.h"
+
+#define DHTPIN 2     // Digital pin connected to the DHT sensor
+#define DHTTYPE DHT22   // DHT 22
 
 TwoWire i2cwire;
+DHT dht(DHTPIN, DHTTYPE);
 
 void setup() {
   Serial.begin(9600);
+  dht.begin();
   i2cEnable(i2cwire);
   tetrixServoEnable(i2cwire);
   tetrixMotorEnable(i2cwire);
@@ -19,17 +25,17 @@ void loop() {
   char device[10], action[10];
   char what[10], how[10];
   String command_str = "";
-  //"servo 1,0:slow -90,0"
-  //"motor 1,2:power 20,20"
-  //"motor 1,2:power 0,0"
-  //"motor 1,2:invert 0,0"
-  //"motor 1,2:speed 1000,0"
+  /*"servo 1,0:slow -90,0"
+  "motor 1,2:power 20,20"
+  "motor 1,2:power 0,0"
+  "motor 1,2:invert 0,0"
+  "motor 1,2:speed 1000,0"
+  "get th"*/
   
   do {
     symbol = Serial.read();
     if (symbol != '\xFF') {
       if (symbol == '\x0A') {
-        //Serial.println("received: " + recStr);
         break;
       } else {
         recStr += symbol;
@@ -41,11 +47,11 @@ void loop() {
   sscanf(buf, "%s%s", &what, &how);
 
   String what_to_do = String(what);
-  String how_fast = String(how);
+  String data_or_how_fast = String(how);
 
   if (what_to_do == "forward") {
     
-    if (how_fast == "slow") {
+    if (data_or_how_fast == "slow") {
       command_str = "motor 1,2:invert 1,0";
       command_str.toCharArray(buf, 50);
       sscanf(buf, "%s%d,%d:%s%d,%d", &device, &num1, &num2, &action, &value1, &value2);
@@ -56,7 +62,7 @@ void loop() {
       sscanf(buf, "%s%d,%d:%s%d,%d", &device, &num1, &num2, &action, &value1, &value2);
       execMotorCommand(i2cwire, num1, num2, action, value1, value2);
       
-   } else  if (how_fast == "med") {
+   } else  if (data_or_how_fast == "med") {
       command_str = "motor 1,2:invert 1,0";
       command_str.toCharArray(buf, 50);
       sscanf(buf, "%s%d,%d:%s%d,%d", &device, &num1, &num2, &action, &value1, &value2);
@@ -81,7 +87,7 @@ void loop() {
     
   } else if (what_to_do == "back") {
 
-    if (how_fast == "slow") {
+    if (data_or_how_fast == "slow") {
       command_str = "motor 1,2:invert 0,1";
       command_str.toCharArray(buf, 50);
       sscanf(buf, "%s%d,%d:%s%d,%d", &device, &num1, &num2, &action, &value1, &value2);
@@ -92,7 +98,7 @@ void loop() {
       sscanf(buf, "%s%d,%d:%s%d,%d", &device, &num1, &num2, &action, &value1, &value2);
       execMotorCommand(i2cwire, num1, num2, action, value1, value2);
       
-    } else  if (how_fast == "med") {
+    } else  if (data_or_how_fast == "med") {
       command_str = "motor 1,2:invert 0,1";
       command_str.toCharArray(buf, 50);
       sscanf(buf, "%s%d,%d:%s%d,%d", &device, &num1, &num2, &action, &value1, &value2);
@@ -117,7 +123,7 @@ void loop() {
     
   } else if (what_to_do == "left") {
     
-    int how_long = how_fast.toInt();
+    int how_long = data_or_how_fast.toInt();
    
     command_str = "motor 1,2:power 0,0";
     command_str.toCharArray(buf, 50);
@@ -147,7 +153,7 @@ void loop() {
 
   } else if (what_to_do == "right") {
 
-    int how_long = how_fast.toInt();
+    int how_long = data_or_how_fast.toInt();
    
     command_str = "motor 1,2:power 0,0";
     command_str.toCharArray(buf, 50);
@@ -175,11 +181,28 @@ void loop() {
     sscanf(buf, "%s%d,%d:%s%d,%d", &device, &num1, &num2, &action, &value1, &value2);
     execMotorCommand(i2cwire, num1, num2, action, value1, value2);
     
-  } else { // stop
+  } else if (what_to_do == "stop") {
     command_str = "motor 1,2:power 0,0";
     command_str.toCharArray(buf, 50);
     sscanf(buf, "%s%d,%d:%s%d,%d", &device, &num1, &num2, &action, &value1, &value2);
     execMotorCommand(i2cwire, num1, num2, action, value1, value2);
+    
+  } else if (what_to_do == "get") {
+     
+     if (data_or_how_fast == "th") {
+       float h = dht.readHumidity();
+       float t = dht.readTemperature();
+       if (isnan(h) || isnan(t)) {
+         Serial.println("Failed to read from DHT sensor!");
+       } else {
+         String Temperature = String(t, 2);
+         String Humidity = String(h, 2);
+         String Data = "Temperature: " + Temperature + "°C, Humidity: " + Humidity + "%";
+         Serial.println(Data);
+       }
+     }
+  } else {
+    Serial.println("Unknown command!");
   }
   
   delay(500);
