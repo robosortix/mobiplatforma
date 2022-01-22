@@ -8,6 +8,8 @@
 
 TwoWire i2cwire;
 DHT dht(DHTPIN, DHTTYPE);
+const int pinLight = 8;
+const String ok = "ok";
 
 void setup() {
   Serial.begin(9600);
@@ -49,7 +51,7 @@ void loop() {
   String what_to_do = String(what);
   String data_or_how_fast = String(how);
 
-  if (what_to_do == "forward") {
+  if (what_to_do == "Forward") {
     
     if (data_or_how_fast == "slow") {
       command_str = "motor 1,2:invert 1,0";
@@ -84,8 +86,9 @@ void loop() {
       sscanf(buf, "%s%d,%d:%s%d,%d", &device, &num1, &num2, &action, &value1, &value2);
       execMotorCommand(i2cwire, num1, num2, action, value1, value2);
     }
+    Serial.println(ok);
     
-  } else if (what_to_do == "back") {
+  } else if (what_to_do == "Back") {
 
     if (data_or_how_fast == "slow") {
       command_str = "motor 1,2:invert 0,1";
@@ -120,8 +123,9 @@ void loop() {
       sscanf(buf, "%s%d,%d:%s%d,%d", &device, &num1, &num2, &action, &value1, &value2);
       execMotorCommand(i2cwire, num1, num2, action, value1, value2);
     }
+    Serial.println(ok);
     
-  } else if (what_to_do == "left") {
+  } else if (what_to_do == "Left") {
     
     int how_long = data_or_how_fast.toInt();
    
@@ -130,6 +134,7 @@ void loop() {
     sscanf(buf, "%s%d,%d:%s%d,%d", &device, &num1, &num2, &action, &value1, &value2);
     execMotorCommand(i2cwire, num1, num2, action, value1, value2);
 
+    Serial.println(ok);
     delay(100);
 
     command_str = "motor 1,2:invert 1,0";
@@ -151,7 +156,7 @@ void loop() {
     sscanf(buf, "%s%d,%d:%s%d,%d", &device, &num1, &num2, &action, &value1, &value2);
     execMotorCommand(i2cwire, num1, num2, action, value1, value2);
 
-  } else if (what_to_do == "right") {
+  } else if (what_to_do == "Right") {
 
     int how_long = data_or_how_fast.toInt();
    
@@ -160,6 +165,7 @@ void loop() {
     sscanf(buf, "%s%d,%d:%s%d,%d", &device, &num1, &num2, &action, &value1, &value2);
     execMotorCommand(i2cwire, num1, num2, action, value1, value2);
 
+    Serial.println(ok);
     delay(100);
 
     command_str = "motor 1,2:invert 1,0";
@@ -181,14 +187,76 @@ void loop() {
     sscanf(buf, "%s%d,%d:%s%d,%d", &device, &num1, &num2, &action, &value1, &value2);
     execMotorCommand(i2cwire, num1, num2, action, value1, value2);
     
-  } else if (what_to_do == "stop") {
+  } else if (what_to_do == "Stop") {
     command_str = "motor 1,2:power 0,0";
     command_str.toCharArray(buf, 50);
     sscanf(buf, "%s%d,%d:%s%d,%d", &device, &num1, &num2, &action, &value1, &value2);
     execMotorCommand(i2cwire, num1, num2, action, value1, value2);
-    
-  } else if (what_to_do == "get") {
-     
+    Serial.println(ok);
+
+  } else if (what_to_do == "Cam") {
+
+     if (data_or_how_fast == "def") {
+       command_str = "servo 5,0:fast 40,0";
+       command_str.toCharArray(buf, 50);
+       sscanf(buf, "%s%d,%d:%s%d,%d", &device, &num1, &num2, &action, &value1, &value2);
+       execServoCommand(i2cwire, num1, action, value1);
+     } else if (data_or_how_fast == "up") {
+       command_str = "servo 5,0:fast 0,0";
+       command_str.toCharArray(buf, 50);
+       sscanf(buf, "%s%d,%d:%s%d,%d", &device, &num1, &num2, &action, &value1, &value2);
+       execServoCommand(i2cwire, num1, action, value1);
+     } else if (data_or_how_fast == "up") {
+       command_str = "servo 5,0:fast 95,0";
+       command_str.toCharArray(buf, 50);
+       sscanf(buf, "%s%d,%d:%s%d,%d", &device, &num1, &num2, &action, &value1, &value2);
+       execServoCommand(i2cwire, num1, action, value1);
+     } else {
+       int angle = abs(data_or_how_fast.toInt());
+       if (angle > 95) {
+         angle = 95;
+       }
+       String angle_str = String(angle);
+       command_str = "servo 5,0:fast " + angle_str + ",0";
+       command_str.toCharArray(buf, 50);
+       sscanf(buf, "%s%d,%d:%s%d,%d", &device, &num1, &num2, &action, &value1, &value2);
+       execServoCommand(i2cwire, num1, action, value1); 
+     }
+     Serial.println(ok);
+
+  } else if (what_to_do == "Light") {
+    if (data_or_how_fast == "on") {
+      digitalWrite(pinLight, HIGH);
+    } else {
+      digitalWrite(pinLight, LOW);
+    }
+    Serial.println(ok);
+
+  } else if (what_to_do == "man") {
+
+    /*if (data_or_how_fast == "rel") {
+      command_str = "servo 4,0:fast 0,0";
+      command_str.toCharArray(buf, 50);
+      sscanf(buf, "%s%d,%d:%s%d,%d", &device, &num1, &num2, &action, &value1, &value2);
+      execServoCommand(i2cwire, num1, action, value1);
+    } else if (data_or_how_fast == "cat") {
+      command_str = "servo 4,0:fast 70,0";
+      command_str.toCharArray(buf, 50);
+      sscanf(buf, "%s%d,%d:%s%d,%d", &device, &num1, &num2, &action, &value1, &value2);
+      execServoCommand(i2cwire, num1, action, value1);
+    } else if (data_or_how_fast == "work") {
+      command_str = "servo 3,0:fast 0,0";
+      command_str.toCharArray(buf, 50);
+      sscanf(buf, "%s%d,%d:%s%d,%d", &device, &num1, &num2, &action, &value1, &value2);
+      execServoCommand(i2cwire, num1, action, value1);
+      command_str = "servo 2,0:fast 0,0";
+      command_str.toCharArray(buf, 50);
+      sscanf(buf, "%s%d,%d:%s%d,%d", &device, &num1, &num2, &action, &value1, &value2);
+      execServoCommand(i2cwire, num1, action, value1);
+    }*/
+
+  } else if (what_to_do == "Get") {
+
      if (data_or_how_fast == "th") {
        float h = dht.readHumidity();
        float t = dht.readTemperature();
@@ -204,9 +272,9 @@ void loop() {
   } else {
     Serial.println("Unknown command!");
   }
-  
+
   delay(500);
-  
+
   /*setServoPosition(i2cwire, 1, 0);
   delay(1000);
   setServoPosition(i2cwire, 1, 90);
